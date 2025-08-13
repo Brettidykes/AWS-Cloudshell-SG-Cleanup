@@ -47,16 +47,17 @@ Your AWS credentials need the following permissions:
 
 ### Method 1: Edit the Script
 1. Open the script file
-2. Replace `sg-xxxxxxxxxx` with your security group ID:
+2. Delete the one line version of the script
+3. Replace `sg-xxxxxxxxxx` with your security group ID:
    ```bash
    SG="sg-0280c44d67cb8660f"  # Replace with your security group ID
    ```
-3. Run the script:
+4. Run the script:
    ```bash
    ./security-group-checker.sh
    ```
 
-### Method 2: Single-Line Command
+### Method 2: Single-Line Command - Copy and paste into cloudshell (easiest, recommended)
 Use the one-liner version (replace the security group ID):
 ```bash
 SG="sg-0280c44d67cb8660f"; echo "=== EC2 Instances ==="; RESULT=$(aws ec2 describe-instances --filters "Name=instance.group-id,Values=$SG" --query 'Reservations[*].Instances[*].[InstanceId,Tags[?Key==`Name`].Value|[0]]' --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== Network Interfaces ==="; RESULT=$(aws ec2 describe-network-interfaces --filters "Name=group-id,Values=$SG" --query 'NetworkInterfaces[*].[NetworkInterfaceId,Description]' --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== ALB/NLB ==="; RESULT=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(SecurityGroups, '$SG')].[LoadBalancerName,Type]" --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== Classic LB ==="; RESULT=$(aws elb describe-load-balancers --query "LoadBalancerDescriptions[?contains(SecurityGroups, '$SG')].[LoadBalancerName]" --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== RDS ==="; RESULT=$(aws rds describe-db-instances --query "DBInstances[?VpcSecurityGroups[?VpcSecurityGroupId=='$SG']].[DBInstanceIdentifier,Engine]" --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== Lambda ==="; RESULT=$(aws lambda list-functions --query "Functions[?VpcConfig.SecurityGroupIds[?contains(@, '$SG')]].[FunctionName]" --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== ElastiCache ==="; RESULT=$(aws elasticache describe-cache-clusters --query "CacheClusters[?SecurityGroups[?SecurityGroupId=='$SG']].[CacheClusterId,Engine]" --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== ASG Launch Configs ==="; RESULT=$(aws autoscaling describe-launch-configurations --query "LaunchConfigurations[?contains(SecurityGroups, '$SG')].[LaunchConfigurationName]" --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== Redshift ==="; RESULT=$(aws redshift describe-clusters --query "Clusters[?VpcSecurityGroups[?VpcSecurityGroupId=='$SG']].[ClusterIdentifier]" --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== Security Group Refs ==="; RESULT=$(aws ec2 describe-security-groups --query "SecurityGroups[?IpPermissions[?UserIdGroupPairs[?GroupId=='$SG']] || IpPermissionsEgress[?UserIdGroupPairs[?GroupId=='$SG']]].[GroupId,GroupName]" --output text 2>/dev/null); [ -n "$RESULT" ] && echo "$RESULT" || echo "None found"; echo "=== DONE ==="
